@@ -17,11 +17,11 @@ class ViewController: UITableViewController {
     private let bookList = BehaviorSubject<[BookList]>(value: []) // 초기 선언이므로 빈 배열 !
     private let disposeBag = DisposeBag()
 
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "BookList"
 
+        
         self.refreshControl = UIRefreshControl()
         let refreshControl = self.refreshControl!
         refreshControl.backgroundColor = .white
@@ -101,8 +101,6 @@ class ViewController: UITableViewController {
         }
         .map { objects in // compactMap: 1차원 배열에서 nil을 제거하고 옵셔널 바인딩
             //throw SimpleError() //MARK: map안에서의 에러 표현
-
-            
             
             return objects.compactMap { dic -> BookList? in
 
