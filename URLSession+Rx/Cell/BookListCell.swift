@@ -9,7 +9,7 @@ import UIKit
 import SnapKit
 
 class BookListCell: UITableViewCell {
-    var bookList: BookList?
+    var bookList: List?
 
     var titleLabel = UILabel()
     var descriptionLabel = UILabel()
@@ -24,10 +24,10 @@ class BookListCell: UITableViewCell {
         }
         
         guard let bookList = bookList else { return }
-        titleLabel.text = bookList.list[cellCount ?? 0].title
+        titleLabel.text = bookList.title
         titleLabel.font = .systemFont(ofSize: 20, weight: .bold)
         
-        descriptionLabel.text = bookList.list[cellCount ?? 0].description
+        descriptionLabel.text = bookList.description
         descriptionLabel.font = .systemFont(ofSize: 16)
         descriptionLabel.textColor = .lightGray
         descriptionLabel.numberOfLines = 1

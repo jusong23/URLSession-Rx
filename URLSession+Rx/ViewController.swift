@@ -14,14 +14,15 @@ public class SimpleError: Error {
 }
 
 class ViewController: UITableViewController {
-    private let bookList = BehaviorSubject<[BookList]>(value: []) // 초기 선언이므로 빈 배열 !
+    private let bookList = PublishSubject<BookList>() // 초기 선언이므로 빈 배열 !
+    private let list = BehaviorSubject<[List]>(value: [])
     private let disposeBag = DisposeBag()
 
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "BookList"
 
-        
+
         self.refreshControl = UIRefreshControl()
         let refreshControl = self.refreshControl!
         refreshControl.backgroundColor = .white
@@ -49,9 +50,6 @@ class ViewController: UITableViewController {
         // 배열의 인덱스를 하나하나 방출
         .map { fetchedbookList -> URL in
             // 타입을 변경할 때도 map이 유용하다. (Array -> URL)
-
-            print("fetchedbookList: \(fetchedbookList) thread in fetchedbookList: \(Thread.isMainThread)")
-
             return URL(string: "https://kxcoding-study.azurewebsites.net/api/\(fetchedbookList)")!
         }
         //MARK: - Request
@@ -63,74 +61,39 @@ class ViewController: UITableViewController {
         }
         // URL -> URLRequest
         .flatMap { request -> Observable<(response: HTTPURLResponse, data: Data)> in
-
-            print("request: \(request) thread in request: \(Thread.isMainThread)")
-
             return URLSession.shared.rx.response(request: request)
         }
         // Tuple의 형태의 Observable 시퀀스로 변환 Observable<(response,data)>.  ... Observable<Int> 처럼
         //MARK: - Response
         .filter { response, _ in
             // Tuple 내에서 response만 받기 위해 _ 표시
-
-            print("response: \(response) thread in response: \(Thread.isMainThread)")
-
             return 200..<300 ~= response.statusCode
             // responds.statusCode가 해당범위에 해당하면 true
         }
-            .map { _, data -> [BookList] in
-
-            print("data: \(data) thread in data: \(Thread.isMainThread)")
-
+        .map { _, data -> BookList in
             let decoder = JSONDecoder()
             if let json = try? decoder.decode(BookList.self, from: data) {
-                print("type: \(type(of: [json]))")
-//                print("type(of: [json]): \(type(of: [json]))")
-//                return BookList(list: json.list, totalCount: json.totalCount, code: json.code, message: json.message)
-                return [json]
+                return json
             }
             throw SimpleError()
-        }
-            .filter { objects in // 빈 Array(연결 실패)는 안 받을래 !
-
-            print(" * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * ")
-            print("objects: \(objects) thread in objects: \(Thread.current)")
-            print(" * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * ")
-                
-            return objects.count > 0
-        }
-        .map { objects in // compactMap: 1차원 배열에서 nil을 제거하고 옵셔널 바인딩
+        } // MARK: - 배열만 뽑아내는 Tric
+        .map { objects -> [List] in // compactMap: 1차원 배열에서 nil을 제거하고 옵셔널 바인딩
             //throw SimpleError() //MARK: map안에서의 에러 표현
-            
-            return objects.compactMap { dic -> BookList? in
 
-                print(" * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * ")
-                print("dic: \(dic) thread in dic: \(Thread.current)") //MARK: 몇 번 쓰레드에서 돌아가는 지 까지 확인 가능 !
-                print(" * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * ")
+            return objects.list.compactMap { dic -> List? in
 
-//                guard let id = dic["id"] as? Int,
-//                    let name = dic["name"] as? String,
-//                    let description = dic["description"] as? String,
-//                    let stargazersCount = dic["stargazers_count"] as? Int,
-//                    let language = dic["language"] as? String else {
-//                    return nil
-//                }
+                print("Pleeeease: \(List(id: dic.id, title: dic.title, description: dic.description, yes24Link: dic.yes24Link, publicationDate: dic.publicationDate))")
 
-
-                
-                return BookList(list: dic.list, totalCount: dic.totalCount, code: dic.code, message: dic.message)
+                return List(id: dic.id, title: dic.title, description: dic.description, yes24Link: dic.yes24Link, publicationDate: dic.publicationDate)
             }
         }
-            .subscribe(on: ConcurrentDispatchQueueScheduler(queue: .global())) // Observable 자체 Thread 변경
+        .subscribe(on: ConcurrentDispatchQueueScheduler(queue: .global())) // Observable 자체 Thread 변경
         .observe(on: MainScheduler.instance) // 이후 subsribe의 Thread 변경
         .subscribe { event in // MARK: 에러처리에 용이한 subscribe 트릭
             switch event {
             case .next(let newBookList):
                 print("newBookList: \(newBookList), thread in newBookList: \(Thread.isMainThread)")
-                self.bookList.onNext(newBookList)
-//                print(type(of: newBookList))
-//                print(self.bookList.values)
-//                print("self.bookList is \(self.bookList)")
+                self.list.onNext(newBookList)
                 // BehaviorSubject에 이벤트 발생
                 self.tableView.reloadData()
                 self.refreshControl?.endRefreshing()
@@ -157,10 +120,11 @@ class ViewController: UITableViewController {
     }
 }
 
+
 extension ViewController {
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         do {
-            return try bookList.value().count
+            return try list.value().count
         } catch {
             return 0
         } // BehaviorSubject의 특징 이용하여 값만 가져오기(.count와 동일)
@@ -169,9 +133,9 @@ extension ViewController {
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: "BookListCell", for: indexPath) as? BookListCell else { return UITableViewCell() }
 
-        var currentBookList: BookList? {
+        var currentBookList: List? {
             do {
-                return try bookList.value()[indexPath.row]
+                return try list.value()[indexPath.row]
             } catch {
                 return nil
             }
@@ -181,5 +145,5 @@ extension ViewController {
 
         return cell
     }
-
 }
+
