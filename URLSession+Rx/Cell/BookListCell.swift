@@ -13,7 +13,6 @@ class BookListCell: UITableViewCell {
 
     var titleLabel = UILabel()
     var descriptionLabel = UILabel()
-    var cellCount = BookCount.value
     
     override func layoutSubviews() {
         super.layoutSubviews()
@@ -42,5 +41,10 @@ class BookListCell: UITableViewCell {
             $0.leading.equalTo(titleLabel.snp.leading)
             $0.trailing.equalTo(titleLabel.snp.trailing)
         }
+    }
+    
+    func setData(_ data: BookListCellData) {
+        titleLabel.text = data.title
+        descriptionLabel.text = data.description
     }
 }

@@ -18,10 +18,15 @@ class ViewController: UITableViewController {
     private let list = BehaviorSubject<[List]>(value: [])
     private let disposeBag = DisposeBag()
 
+    let cellData = PublishSubject<[BookListCellData]>()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "BookList"
     
+        self.tableView.delegate = nil
+        self.tableView.dataSource = nil
+        
         self.refreshControl = UIRefreshControl()
         let refreshControl = self.refreshControl!
         refreshControl.backgroundColor = .white
@@ -32,16 +37,18 @@ class ViewController: UITableViewController {
 
         tableView.register(BookListCell.self, forCellReuseIdentifier: "BookListCell")
         tableView.rowHeight = 80
-
     }
+    
 
     // UI 안쓰니까 .global 사용 (Rx - Binding으로 처리가능)
     @objc func refresh() {
-        DispatchQueue.global(qos: .background).async { [weak self] in
-            guard let self = self else { return }
-
-            self.fetchBookList(of: "books")
-        }
+//        DispatchQueue.global(qos: .background).async { [weak self] in
+//            guard let self = self else { return }
+//
+//            self.fetchBookList(of: "books")
+//        }
+        bind()
+        fetchBookList(of: "books")
     }
 
     func fetchBookList(of fetchedbookList: String) {
@@ -86,7 +93,7 @@ class ViewController: UITableViewController {
                 return List(id: dic.id, title: dic.title, description: dic.description, yes24Link: dic.yes24Link, publicationDate: dic.publicationDate)
             }
         }
-            .subscribe(on: ConcurrentDispatchQueueScheduler(queue: .global())) // Observable 자체 Thread 변경
+        .subscribe(on: ConcurrentDispatchQueueScheduler(queue: .global())) // Observable 자체 Thread 변경
         .observe(on: MainScheduler.instance) // 이후 subsribe의 Thread 변경
         .subscribe { event in // MARK: 에러처리에 용이한 subscribe 트릭
             switch event {
@@ -104,7 +111,7 @@ class ViewController: UITableViewController {
                 print("completed")
             }
         }
-            .disposed(by: disposeBag)
+        .disposed(by: disposeBag)
     }
 
     func alertAction() {
@@ -117,32 +124,44 @@ class ViewController: UITableViewController {
         optionMenu.addAction(Action)
         self.present(optionMenu, animated: true, completion: nil)
     }
-}
-
-
-extension ViewController {
-    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        do {
-            return try list.value().count
-        } catch {
-            return 0
-        } // BehaviorSubject의 특징 이용하여 값만 가져오기(.count와 동일)
-    }
-
-    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let cell = tableView.dequeueReusableCell(withIdentifier: "BookListCell", for: indexPath) as? BookListCell else { return UITableViewCell() }
-
-        var currentBookList: List? {
-            do {
-                return try list.value()[indexPath.row]
-            } catch {
-                return nil
+    
+    private func bind() {
+        cellData
+            .asDriver(onErrorJustReturn: []) // = asObservable , 만약 에러가 발생하면 에러를 발생시켜 !
+            .drive(self.tableView.rx.items) { tv, row, data in
+                let index = IndexPath(row: row, section: 0)
+                let cell = tv.dequeueReusableCell(withIdentifier: "BookListCell", for: index) as! BookListCell
+                cell.setData(data) // [ ] 형태의 PublishSubject인 data를 받으면 setData를 통해 뿌려줌(= cellForRowAt) delegate를 rx로 대체.
+                return cell
             }
-        }
-
-        cell.bookList = currentBookList
-
-        return cell
+            .disposed(by: disposeBag)
     }
 }
+
+
+//extension ViewController {
+//    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+//        do {
+//            return try list.value().count
+//        } catch {
+//            return 0
+//        } // BehaviorSubject의 특징 이용하여 값만 가져오기(.count와 동일)
+//    }
+//
+//    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+//        guard let cell = tableView.dequeueReusableCell(withIdentifier: "BookListCell", for: indexPath) as? BookListCell else { return UITableViewCell() }
+//
+//        var currentBookList: List? {
+//            do {
+//                return try list.value()[indexPath.row]
+//            } catch {
+//                return nil
+//            }
+//        }
+//
+//        cell.bookList = currentBookList
+//
+//        return cell
+//    }
+//}
 

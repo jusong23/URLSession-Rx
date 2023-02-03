@@ -15,6 +15,7 @@
 		759DC0C02989F9DD001E3C2C /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 759DC0BE2989F9DD001E3C2C /* LaunchScreen.storyboard */; };
 		759DC0C92989FB1C001E3C2C /* BookList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 759DC0C82989FB1C001E3C2C /* BookList.swift */; };
 		759DC0CC2989FDA9001E3C2C /* BookListCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 759DC0CB2989FDA9001E3C2C /* BookListCell.swift */; };
+		759DC0F2298C8B8D001E3C2C /* BookListCellData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 759DC0F1298C8B8D001E3C2C /* BookListCellData.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -29,6 +30,7 @@
 		759DC0C12989F9DD001E3C2C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		759DC0C82989FB1C001E3C2C /* BookList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookList.swift; sourceTree = "<group>"; };
 		759DC0CB2989FDA9001E3C2C /* BookListCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookListCell.swift; sourceTree = "<group>"; };
+		759DC0F1298C8B8D001E3C2C /* BookListCellData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookListCellData.swift; sourceTree = "<group>"; };
 		DBD8F0D6695068EF3A9B317D /* Pods-URLSession+Rx.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-URLSession+Rx.debug.xcconfig"; path = "Target Support Files/Pods-URLSession+Rx/Pods-URLSession+Rx.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -73,6 +75,7 @@
 		759DC0B22989F9DA001E3C2C /* URLSession+Rx */ = {
 			isa = PBXGroup;
 			children = (
+				759DC0F0298C8B6D001E3C2C /* Entities */,
 				759DC0CA2989FD8F001E3C2C /* Cell */,
 				759DC0C72989FB0E001E3C2C /* Model */,
 				759DC0B32989F9DA001E3C2C /* AppDelegate.swift */,
@@ -99,6 +102,14 @@
 				759DC0CB2989FDA9001E3C2C /* BookListCell.swift */,
 			);
 			path = Cell;
+			sourceTree = "<group>";
+		};
+		759DC0F0298C8B6D001E3C2C /* Entities */ = {
+			isa = PBXGroup;
+			children = (
+				759DC0F1298C8B8D001E3C2C /* BookListCellData.swift */,
+			);
+			path = Entities;
 			sourceTree = "<group>";
 		};
 		DEF41BDE772FA6B407BD6087 /* Pods */ = {
@@ -228,6 +239,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				759DC0F2298C8B8D001E3C2C /* BookListCellData.swift in Sources */,
 				759DC0C92989FB1C001E3C2C /* BookList.swift in Sources */,
 				759DC0B82989F9DA001E3C2C /* ViewController.swift in Sources */,
 				759DC0CC2989FDA9001E3C2C /* BookListCell.swift in Sources */,
