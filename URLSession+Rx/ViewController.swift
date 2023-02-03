@@ -21,8 +21,7 @@ class ViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "BookList"
-
-
+    
         self.refreshControl = UIRefreshControl()
         let refreshControl = self.refreshControl!
         refreshControl.backgroundColor = .white
@@ -70,7 +69,7 @@ class ViewController: UITableViewController {
             return 200..<300 ~= response.statusCode
             // responds.statusCode가 해당범위에 해당하면 true
         }
-        .map { _, data -> BookList in
+            .map { _, data -> BookList in
             let decoder = JSONDecoder()
             if let json = try? decoder.decode(BookList.self, from: data) {
                 return json
@@ -87,7 +86,7 @@ class ViewController: UITableViewController {
                 return List(id: dic.id, title: dic.title, description: dic.description, yes24Link: dic.yes24Link, publicationDate: dic.publicationDate)
             }
         }
-        .subscribe(on: ConcurrentDispatchQueueScheduler(queue: .global())) // Observable 자체 Thread 변경
+            .subscribe(on: ConcurrentDispatchQueueScheduler(queue: .global())) // Observable 자체 Thread 변경
         .observe(on: MainScheduler.instance) // 이후 subsribe의 Thread 변경
         .subscribe { event in // MARK: 에러처리에 용이한 subscribe 트릭
             switch event {
