@@ -13,6 +13,8 @@ public class SimpleError: Error {
     public init() { }
 }
 
+// 에러처리, json 파일 안에있는 배열만 분리해서 가져오는 경우
+
 class ViewController: UITableViewController {
     private let bookList = PublishSubject<BookList>() // 초기 선언이므로 빈 배열 !
     private let list = BehaviorSubject<[List]>(value: [])
@@ -20,12 +22,11 @@ class ViewController: UITableViewController {
 
     let cellData = PublishSubject<[BookListCellData]>()
     
+    let refreshOnOff = PublishSubject<Bool>()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "BookList"
-    
-        self.tableView.delegate = nil
-        self.tableView.dataSource = nil
         
         self.refreshControl = UIRefreshControl()
         let refreshControl = self.refreshControl!
@@ -42,13 +43,13 @@ class ViewController: UITableViewController {
 
     // UI 안쓰니까 .global 사용 (Rx - Binding으로 처리가능)
     @objc func refresh() {
-//        DispatchQueue.global(qos: .background).async { [weak self] in
-//            guard let self = self else { return }
-//
-//            self.fetchBookList(of: "books")
-//        }
-        bind()
-        fetchBookList(of: "books")
+        
+        DispatchQueue.global(qos: .background).async { [weak self] in
+            guard let self = self else { return }
+
+            self.fetchBookList(of: "books")
+        }
+//        fetchBookList(of: "books")
     }
 
     func fetchBookList(of fetchedbookList: String) {
@@ -124,44 +125,32 @@ class ViewController: UITableViewController {
         optionMenu.addAction(Action)
         self.present(optionMenu, animated: true, completion: nil)
     }
-    
-    private func bind() {
-        cellData
-            .asDriver(onErrorJustReturn: []) // = asObservable , 만약 에러가 발생하면 에러를 발생시켜 !
-            .drive(self.tableView.rx.items) { tv, row, data in
-                let index = IndexPath(row: row, section: 0)
-                let cell = tv.dequeueReusableCell(withIdentifier: "BookListCell", for: index) as! BookListCell
-                cell.setData(data) // [ ] 형태의 PublishSubject인 data를 받으면 setData를 통해 뿌려줌(= cellForRowAt) delegate를 rx로 대체.
-                return cell
-            }
-            .disposed(by: disposeBag)
-    }
+
 }
 
+extension ViewController {
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        do {
+            return try list.value().count
+        } catch {
+            return 0
+        } // BehaviorSubject의 특징 이용하여 값만 가져오기(.count와 동일)
+    }
 
-//extension ViewController {
-//    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-//        do {
-//            return try list.value().count
-//        } catch {
-//            return 0
-//        } // BehaviorSubject의 특징 이용하여 값만 가져오기(.count와 동일)
-//    }
-//
-//    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-//        guard let cell = tableView.dequeueReusableCell(withIdentifier: "BookListCell", for: indexPath) as? BookListCell else { return UITableViewCell() }
-//
-//        var currentBookList: List? {
-//            do {
-//                return try list.value()[indexPath.row]
-//            } catch {
-//                return nil
-//            }
-//        }
-//
-//        cell.bookList = currentBookList
-//
-//        return cell
-//    }
-//}
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: "BookListCell", for: indexPath) as? BookListCell else { return UITableViewCell() }
+
+        var currentBookList: List? {
+            do {
+                return try list.value()[indexPath.row]
+            } catch {
+                return nil
+            }
+        }
+
+        cell.bookList = currentBookList
+
+        return cell
+    }
+}
 
